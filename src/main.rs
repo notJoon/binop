@@ -18,6 +18,10 @@ enum BinOpCommand {
         #[clap(short = 'n', help = "The numbers to subtract")]
         numbers: Option<String>,
     },
+    Expr {
+        #[clap(short = 'e', help = "The expression to evaluate")]
+        expr: Option<String>,
+    },
 }
 
 fn main() {
@@ -39,6 +43,48 @@ fn main() {
             }
 
             println!("{}", sub);
+        }
+        BinOpCommand::Expr { expr } => {
+            let expr = expr.unwrap_or(String::from("0"));
+            let mut result = 0;
+            let mut temp_number = String::new();
+            let mut op = '+';
+
+            let mut num_count = 0;
+            let mut op_count = 0;
+
+            for c in expr.chars() {
+                if c.is_digit(10) {
+                    temp_number.push(c);
+                    num_count += 1;
+                } else if c == '+' || c == '-' {
+                    if !temp_number.is_empty() {
+                        let number = temp_number.parse::<i32>().unwrap();
+                        match op {
+                            '+' => result += number,
+                            '-' => result -= number,
+                            _ => panic!("Unknown operator"),
+                        }
+                        op_count += 1;
+                        temp_number = String::new();
+                    }
+
+                    op = c;
+                }
+            }
+
+            if op_count != num_count - 1 {
+                panic!("Invalid expression: number of operators is more than number of numbers");
+            }
+
+            let number = temp_number.parse::<i32>().unwrap();
+            match op {
+                '+' => result += number,
+                '-' => result -= number,
+                _ => panic!("Unknown operator"),
+            }
+
+            println!("{}", result);
         }
     }
 }
@@ -90,5 +136,11 @@ mod binop_test {
         let sum = num_vec.into_iter().sum::<i32>();
 
         assert_eq!(sum, 15);
+    }
+
+    #[test]
+    fn test_expr() {
+        let app = BinOpApp::parse_from(&["binop", "expr", "-e", "1 + 2 - 3 + 4 - 5"]);
+        assert_eq!(app.command, BinOpCommand::Expr { expr: Some(String::from("1 + 2 - 3 + 4 - 5")) });
     }
 }
