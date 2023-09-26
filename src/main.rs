@@ -27,65 +27,75 @@ enum BinOpCommand {
 fn main() {
     let app = BinOpApp::parse();
     match app.command {
-        BinOpCommand::Add { numbers } => {
-            let numbers = numbers.unwrap_or(String::from("0"));
-            let sum = string_to_numbers(numbers).into_iter().sum::<i32>();
+        BinOpCommand::Add { numbers } => add_handler(numbers),
+        BinOpCommand::Sub { numbers } => sub_handler(numbers),
+        BinOpCommand::Expr { expr } => expr_handler(expr),
+    }
+}
 
-            println!("{}", sum);
+fn add_handler(numbers: Option<String>) {
+    let numbers = numbers.unwrap_or(String::from("0"));
+    let sum = string_to_numbers(numbers).into_iter().sum::<i32>();
+
+    println!("{}", sum);
+}
+
+fn sub_handler(numbers: Option<String>) {
+    let numbers = numbers.unwrap_or(String::from("0"));
+    let num_vec = string_to_numbers(numbers);
+
+    let mut sub = num_vec[0];
+    for n in num_vec[1..].iter() {
+        sub -= n;
+    }
+
+    println!("{}", sub);
+}
+
+fn expr_handler(expr: Option<String>) {
+    let expr = expr.unwrap_or(String::from("0"));
+    let mut result = 0;
+    let mut temp_number = String::new();
+    let mut op = '+';
+
+    let mut num_count = 0;
+    let mut op_count = 0;
+
+    for c in expr.chars() {
+        if c.is_digit(10) {
+            temp_number.push(c);
+            num_count += 1;
+        } else if c == '+' || c == '-' {
+            if !temp_number.is_empty() {
+                let number = temp_number.parse::<i32>().unwrap();
+                operator_matcher(op, &mut result, number);
+                op_count += 1;
+                temp_number = String::new();
+            }
+
+            op = c;
         }
-        BinOpCommand::Sub { numbers } => {
-            let numbers = numbers.unwrap_or(String::from("0"));
-            let num_vec = string_to_numbers(numbers);
+    }
 
-            let mut sub = num_vec[0];
-            for n in num_vec[1..].iter() {
-                sub -= n;
-            }
+    if op_count != num_count - 1 {
+        panic!("Invalid expression: number of operators is more than number of numbers");
+    }
 
-            println!("{}", sub);
-        }
-        BinOpCommand::Expr { expr } => {
-            let expr = expr.unwrap_or(String::from("0"));
-            let mut result = 0;
-            let mut temp_number = String::new();
-            let mut op = '+';
+    let number = temp_number.parse::<i32>().unwrap();
+    match op {
+        '+' => result += number,
+        '-' => result -= number,
+        _ => panic!("Unknown operator"),
+    }
 
-            let mut num_count = 0;
-            let mut op_count = 0;
+    println!("{}", result);
+}
 
-            for c in expr.chars() {
-                if c.is_digit(10) {
-                    temp_number.push(c);
-                    num_count += 1;
-                } else if c == '+' || c == '-' {
-                    if !temp_number.is_empty() {
-                        let number = temp_number.parse::<i32>().unwrap();
-                        match op {
-                            '+' => result += number,
-                            '-' => result -= number,
-                            _ => panic!("Unknown operator"),
-                        }
-                        op_count += 1;
-                        temp_number = String::new();
-                    }
-
-                    op = c;
-                }
-            }
-
-            if op_count != num_count - 1 {
-                panic!("Invalid expression: number of operators is more than number of numbers");
-            }
-
-            let number = temp_number.parse::<i32>().unwrap();
-            match op {
-                '+' => result += number,
-                '-' => result -= number,
-                _ => panic!("Unknown operator"),
-            }
-
-            println!("{}", result);
-        }
+fn operator_matcher(op: char, result: &mut i32, number: i32) {
+    match op {
+        '+' => *result += number,
+        '-' => *result -= number,
+        _ => panic!("Unknown operator"),
     }
 }
 
